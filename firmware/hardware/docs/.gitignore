@@ -1,1 +1,11 @@
+*.lst
+*.map
+*.o
+*.obj
+*.cod
+*.bak
 
+Debug/
+Release/
+dist/
+build/
