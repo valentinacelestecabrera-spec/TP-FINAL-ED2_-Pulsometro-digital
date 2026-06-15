@@ -1,6 +1,7 @@
 # TP-FINAL-ED2_Pulsometro-digital
 Asignatura: Electrónica Digital II - Universidad Nacional de Córdoba
 
+
 Integrantes:Cabrera Valentina, Lavena Santiago, Pagani Catalina
 
 Nombre Apellido Profesor: Marcos Blasco
@@ -53,9 +54,13 @@ Configuración de Bits (Fusibles Críticos):
 <img width="890" height="128" alt="image" src="https://github.com/user-attachments/assets/841cf87b-bb6b-43e2-9882-74494807fd3d" />
 
 Oscilador: Cristal externo de 4MHz
+
 Temporizador de vigilancia (WDT): Watchdog timer OFF
+
 Borrado maestro (MCLRE): ENCENDIDO
+
 Periféricos Internos Utilizados: [Ej: Timer0, ADC, EUSART, PWM].
+
 Gestión de Interrupciones: Al contar con un único vector de interrupción, expliquen la prioridad por software ( polling ) en la ISR: ¿Qué bandera ( flag) evalúan primero y por qué?
 
 # 4. Proceso de Integración y Desarrollo (Común)
