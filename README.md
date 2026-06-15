@@ -2,9 +2,9 @@
 Asignatura: Electrónica Digital II - Universidad Nacional de Córdoba
 
 
-Integrantes:Cabrera Valentina, Lavena Santiago, Pagani Catalina
+Integrantes: Cabrera Valentina, Lavena Santiago, Pagani Catalina
 
-Nombre Apellido Profesor: Marcos Blasco
+Profesor: Marcos Blasco
 
 # 1.Descripcion del proyecto
 El proyecto consiste en el desarrolo de un pulsometro usando un microcontrolador (PIC 16F887).
@@ -43,13 +43,19 @@ Diagrama de Flujo o Máquina de Estados: [Inserte aquí la imagen del diagrama q
 # 3. Especificaciones Eléctricas, Alimentación y Entorno
 
 Parámetros de Alimentación y Consumo
+
 Tensión de operación del sistema: 5V 
+
 Método de alimentación: Alimentacion por USB
+
 Consumo estimado o medido: * En modo activo (máxima carga, relés/motores encendidos):XX mA
+
 En modo bajo consumo (si aplica):XX uA ?????????????????
 
 Herramientas de software: MPLAB X IDE v5.35 y compilador XC8
+
 Hardware de Programación/Depuración: Bootloader
+
 Configuración de Bits (Fusibles Críticos):
 <img width="890" height="128" alt="image" src="https://github.com/user-attachments/assets/841cf87b-bb6b-43e2-9882-74494807fd3d" />
 
@@ -65,8 +71,11 @@ Gestión de Interrupciones: Al contar con un único vector de interrupción, exp
 
 # 4. Proceso de Integración y Desarrollo (Común)
 Etapa 1 (Validación inicial): [Ej: Configuración del oscilador/reloj y parpadeo de LED de estado].
+
 Etapa 2 (Adquisición/Comunicación): [Ej: Implementación del ADC y envío de tramas crudas por UART].
+
 Etapa 3 (Integración lógica): [Ej: Procesamiento de datos, lógica de control o montado sobre el RTOS].
+
 Etapa 4 (Sistema Completo): [Ej: Acople de actuadores finales, calibración y pruebas de estrés].
 
 #  5. Ensayos, Pruebas y Resultados (Común)
