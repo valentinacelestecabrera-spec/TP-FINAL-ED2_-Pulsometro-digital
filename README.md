@@ -9,7 +9,7 @@ Profesor: Marcos Blasco
 # 1.Descripcion del proyecto
 El proyecto consiste en el desarrolo de un pulsometro usando un microcontrolador (PIC 16F887).
 El sistema adquiere la señal a traves de un sensor de pulso cardíaco (HW827), procesa la informacion y calcula la frecuencia cardiaca en Latidos Por Minuto (BPM)
-El resultado se muestra en los displays multiplexados. Ademas se genera una indicacion sonora cada vez que se detecta un latido, mediante un buzzer
+El resultado se muestra en los displays multiplexados. Ademas se genera una indicacion sonora cada vez que se detecta un latido, mediante un buzzer. A su vez, los datos obtenidos se muestran a traves de una interfaz grafica en la PC. 
 
 # 2.Alcances del proyecto  
 Este sistema es capaz de: Utilizar interrupciones para temporización y adquisición periódica,transmitir información mediante comunicación UART,generar una señal sonora utilizando un buzzer al detectar un latido,adquirir señales utilizando el conversor Analógico-Digital (ADC) interno del PIC16F887 y calcular la frecuencia cardíaca en BPM.
@@ -20,11 +20,10 @@ El sistema no incluye: Almacenamiento permanente de datos,conectividad inalámbr
 Diseño e implementación de una placa PCB.
 Implementación de filtros digitales para mejorar la calidad de la señal.
 Incorporación de una pantalla.
-Desarrollo de una aplicación de visualización en Python.
 Alimentación mediante batería.
 
 # 2. Arquitectura del Sistema: Hardware y Software
- Hardware e Interconexión
+aqHardware e Interconexión
 Diagrama de Bloques realizado en KiCad
 
 Esquemático del Circuito: 
@@ -57,7 +56,6 @@ Herramientas de software: MPLAB X IDE v5.35 y compilador XC8
 Hardware de Programación/Depuración: Bootloader
 
 Configuración de Bits (Fusibles Críticos):
-<img width="890" height="128" alt="image" src="https://github.com/user-attachments/assets/841cf87b-bb6b-43e2-9882-74494807fd3d" />
 
 Oscilador: Cristal externo de 4MHz
 
