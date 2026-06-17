@@ -56,19 +56,22 @@ Tensión de operación del sistema: 5V
 
 Método de alimentación: Alimentacion por USB
 
+Consumo estimado o medido: En modo activo (máxima carga, relés/motores encendidos): 150 mA
+                           En modo bajo consumo (si aplica): 45 mA
+
 Herramientas de software: MPLAB X IDE v5.35 y compilador XC8
 
 Hardware de Programación/Depuración: Bootloader
 
 Configuración de Bits (Fusibles Críticos):
 
-Oscilador: Cristal externo de 4MHz
+ - Oscilador: Cristal externo de 4MHz
 
-Temporizador de vigilancia (WDT): Watchdog timer OFF
+ - Temporizador de vigilancia (WDT): Watchdog timer OFF
 
 Borrado maestro (MCLRE): ENCENDIDO
 
-Periféricos Internos Utilizados:Timer0, ADC, EUSART
+Periféricos Internos Utilizados: Timer0, ADC, EUSART
 
 Gestión de Interrupciones:
 
