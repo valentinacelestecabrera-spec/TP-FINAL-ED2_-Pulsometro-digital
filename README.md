@@ -93,6 +93,7 @@ Pruebas Funcionales Realizadas:
 Se probo el funcionamiento del sensor para poder configurar el umbral del codigo.
 <img width="899" height="893" alt="1" src="https://github.com/user-attachments/assets/6b0be53d-9dfe-4b87-ab6b-ac4876f53a2a" />
 <img width="899" height="869" alt="2" src="https://github.com/user-attachments/assets/b2e7cdbe-91ae-4591-b343-554c3bdf3f11" />
+<img width="899" height="1599" alt="WhatsApp Image 2026-06-17 at 13 22 22" src="https://github.com/user-attachments/assets/6f5ff8f3-179d-4bd5-8d7d-90be8db4ff23" />
 
 Se valido la conexion entre la interfaz realizada y ???
 <img width="1208" height="744" alt="3" src="https://github.com/user-attachments/assets/b6491a22-2c63-409e-b307-af4fee8f83b8" />
