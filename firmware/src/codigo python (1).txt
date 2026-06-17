@@ -1,0 +1,542 @@
+import sys
+import collections
+import queue
+import threading
+import numpy as np
+
+import serial
+import serial.tools.list_ports
+
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget,
+    QVBoxLayout, QHBoxLayout,
+    QLabel, QPushButton, QComboBox, QLineEdit,
+    QTextEdit, QFrame,
+)
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QFont
+
+import pyqtgraph as pg
+
+
+# =============================================
+# COLORES
+# =============================================
+COLOR_FONDO = "#1e1e1e"
+COLOR_PANEL = "#2d2d2d"
+COLOR_TEXTO = "#ffffff"
+COLOR_BORDE = "#444444"
+
+ESTILO_BASE = f"""
+    QWidget {{
+        background-color: {COLOR_FONDO};
+        color: {COLOR_TEXTO};
+        font-family: Consolas, monospace;
+    }}
+    QFrame {{
+        background-color: {COLOR_PANEL};
+        border: 1px solid {COLOR_BORDE};
+        border-radius: 2px;
+    }}
+    QComboBox {{
+        background-color: #3a3a3a;
+        color: {COLOR_TEXTO};
+        border: 1px solid {COLOR_BORDE};
+        padding: 3px 8px;
+        font-family: Consolas;
+        font-size: 10pt;
+        min-width: 80px;
+    }}
+    
+    QComboBox QAbstractItemView {{
+        background-color: #3a3a3a;
+        color: {COLOR_TEXTO};
+        selection-background-color: #555555;
+    }}
+    QComboBox::drop-down {{ border: none; }}
+    QLineEdit {{
+        background-color: #3a3a3a;        
+        color: {COLOR_TEXTO};
+        border: 1px solid {COLOR_BORDE};
+        padding: 3px 6px;
+        font-family: Consolas;
+        font-size: 10pt;
+    }}
+    QTextEdit {{
+        background-color: #1a1a1a;
+        color: #00ff99;
+        border: none;
+        font-family: Consolas;
+        font-size: 9pt;
+    }}
+    QPushButton {{
+        background-color: #3a3a3a;
+        color: {COLOR_TEXTO};
+        border: none;
+        padding: 5px 10px;
+        font-family: Consolas;
+        font-size: 9pt;
+        font-weight: bold;
+    }}
+    QPushButton:hover  {{ background-color: #555555; }}
+    QPushButton:pressed {{ background-color: #222222; }}
+"""
+
+BUF_SIZE = 300  # 350 Hz x 3s
+
+
+# =============================================
+# HELPERS
+# =============================================
+def separador_h(parent_layout):
+    linea = QFrame()
+    linea.setFrameShape(QFrame.HLine)
+    linea.setStyleSheet(
+        f"border: none; border-top: 1px solid {COLOR_BORDE}; background: transparent;"
+    )
+    parent_layout.addWidget(linea)
+
+
+def label_seccion(texto):
+    lbl = QLabel(texto)
+    lbl.setStyleSheet(
+        f"color: {COLOR_BORDE}; font-size: 9pt; background: transparent; border: none;"
+    )
+    return lbl
+
+
+# =============================================
+# VENTANA PRINCIPAL
+# =============================================
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Monitor PIC16F887")
+        self.setFixedSize(1200, 720)
+        self.setStyleSheet(ESTILO_BASE)
+
+        # Estado
+        self.conectado        = False
+        self.ser              = None
+        self.conversion_activa = False
+        self.test_encendido   = False
+        self._bpm_pendiente   = None
+        
+
+        # Cola y buffer
+        self.cola_datos = queue.Queue()
+        self.datos_adc  = collections.deque([0] * BUF_SIZE, maxlen=BUF_SIZE)
+
+        # UI
+        self._build_ui()
+
+        # Timer: 1 tick = 1 muestra, igual que el código sintético
+        # 350 Hz → 1000/350 ≈ 2.85ms por muestra → usamos 3ms
+        self.timer = QTimer()
+        self.timer.setTimerType(Qt.PreciseTimer)
+        self.timer.timeout.connect(self.actualizar_grafico)
+        self.timer.start(3)
+
+    # =========================================================
+    # BUILD UI
+    # =========================================================
+    def _build_ui(self):
+        central = QWidget()
+        central.setStyleSheet(f"background-color: {COLOR_FONDO}; border: none;")
+        self.setCentralWidget(central)
+
+        root_layout = QVBoxLayout(central)
+        root_layout.setContentsMargins(10, 10, 10, 10)
+        root_layout.setSpacing(5)
+
+        root_layout.addWidget(self._build_frame_conexion())
+        root_layout.addLayout(self._build_frame_medio(), stretch=1)
+        root_layout.addWidget(self._build_frame_inferior())
+
+    # ---------- FRAME CONEXIÓN ----------
+    def _build_frame_conexion(self):
+        frame = QFrame()
+        frame.setFixedHeight(45)
+        frame.setStyleSheet(f"background-color: {COLOR_PANEL}; border: 1px solid #000000;")
+        lay = QHBoxLayout(frame)
+        lay.setContentsMargins(15, 0, 15, 0)
+        lay.setSpacing(8)
+
+        estilo_gris = "background-color: #4a4a4a; color: #ffffff; border: none; font-family: Consolas; font-weight: bold;"
+
+        lbl_puerto = QLabel("Puerto:")
+        lbl_puerto.setStyleSheet("color:#ffffff; border:none; background:transparent;font-weight:bold;font-size:11pt;")
+        lay.addWidget(lbl_puerto)
+
+        self.combo_puerto = QComboBox()
+        self.combo_puerto.setStyleSheet(estilo_gris)
+        self._rellenar_puertos()
+        lay.addWidget(self.combo_puerto)
+
+        lbl_baud = QLabel("Baudrate:")
+        lbl_baud.setStyleSheet("color:#ffffff; border:none; background:transparent;font-weight:bold;font-size:11pt;")
+        lay.addWidget(lbl_baud)
+
+        self.combo_baudrate = QComboBox()
+        self.combo_baudrate.setStyleSheet(estilo_gris)
+        for b in ["9600", "19200", "38400", "57600", "115200"]:
+            self.combo_baudrate.addItem(b)
+        lay.addWidget(self.combo_baudrate)
+
+        btn_act = QPushButton("Actualizar")
+        btn_act.setStyleSheet(estilo_gris)
+        btn_act.clicked.connect(self.actualizar_puertos)
+        lay.addWidget(btn_act)
+
+        self.btn_conectar = QPushButton("Conectar")
+        self.btn_conectar.setFont(QFont("Consolas", 10, QFont.Bold))
+        self._estilo_btn_conectar(False)
+        self.btn_conectar.clicked.connect(self.toggle_conexion)
+        lay.addWidget(self.btn_conectar)
+
+        lay.addStretch()
+        return frame
+
+    # ---------- FRAME MEDIO ----------
+    def _build_frame_medio(self):
+        lay = QHBoxLayout()
+        lay.setSpacing(5)
+
+        pg.setConfigOption('background', COLOR_PANEL)
+        pg.setConfigOption('foreground', '#aaaaaa')
+        pg.setConfigOption('antialias', False)
+
+        self.plot_widget = pg.PlotWidget()
+        self.plot_widget.setStyleSheet("border: none; background: transparent;")
+        self.plot_widget.plotItem.showAxis('top', True)
+        self.plot_widget.plotItem.showAxis('right', True)
+        self.plot_widget.getAxis('top').setStyle(showValues=False, tickLength=0)
+        self.plot_widget.getAxis('right').setStyle(showValues=False, tickLength=0)
+        self.plot_widget.setMouseEnabled(x=False, y=False)
+        self.plot_widget.setMenuEnabled(False)
+        self.plot_widget.setMouseTracking(False)
+        self.plot_widget.viewport().setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.plot_widget.hideButtons()
+        self.plot_widget.setYRange(0, 270, padding=0)
+        self.plot_widget.setXRange(0, BUF_SIZE, padding=0)
+        self.plot_widget.setLabel('left',   'Valor ADC (0-255)', color='#aaaaaa', size='8pt')
+        self.plot_widget.setLabel('bottom', 'Tiempo (S)',         color='#aaaaaa', size='8pt')
+        self.plot_widget.setTitle('Señal del Sensor', color='#aaaaaa', size='9pt')
+        self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
+
+        ax = self.plot_widget.getAxis('bottom')
+        ticks_x = [(0, "0s"), (100, "1s"), (200, "2s"), (300, "3s")]
+        ax.setTicks([ticks_x])
+        ax_top = self.plot_widget.getAxis('top')
+        self.plot_widget.plotItem.showAxis('top', True)
+        ax_top.setTicks([ticks_x])
+        ax_top.setStyle(showValues=False, tickLength=0)
+        
+        ay = self.plot_widget.getAxis('left')
+        ticks_y = [(v, str(v)) for v in range(0, 256, 51)]
+        ay.setTicks([ticks_y])
+        
+
+        ax_right = self.plot_widget.getAxis('right')
+        self.plot_widget.plotItem.showAxis('right', True)
+        ax_right.setTicks([ticks_y])
+        ax_right.setStyle(showValues=False, tickLength=0)
+
+        self.curve = self.plot_widget.plot(pen=pg.mkPen(color='#00bfff', width=1))
+
+        frame_grafico = QFrame()
+        frame_grafico.setStyleSheet(
+            f"background-color:{COLOR_PANEL}; border:1px solid #000000;"
+        )
+        gl = QVBoxLayout(frame_grafico)
+        gl.setContentsMargins(4, 4, 4, 4)
+        gl.addWidget(self.plot_widget)
+        lay.addWidget(frame_grafico, stretch=1)
+
+        # Panel BPM
+        frame_bpm = QFrame()
+        frame_bpm.setFixedWidth(120)
+        frame_bpm.setStyleSheet(
+            f"background-color:{COLOR_PANEL}; border:1px solid #000000;"
+        )
+        bpm_lay = QVBoxLayout(frame_bpm)
+        bpm_lay.setAlignment(Qt.AlignCenter)
+        bpm_lay.setSpacing(8)
+        bpm_lay.addStretch()
+
+        lbl_titulo_bpm = QLabel("BPM:")
+        lbl_titulo_bpm.setAlignment(Qt.AlignCenter)
+        lbl_titulo_bpm.setStyleSheet(
+            "color:#aaaaaa; font-size:18pt; font-weight:bold; border:none; background:transparent;"
+        )
+        bpm_lay.addWidget(lbl_titulo_bpm)
+
+        frame_valor = QFrame()
+        frame_valor.setStyleSheet("background-color:#ffffff; border:none;")
+        fv_lay = QVBoxLayout(frame_valor)
+        fv_lay.setContentsMargins(6, 6, 6, 6)
+
+        self.lbl_bpm = QLabel("---")
+        self.lbl_bpm.setAlignment(Qt.AlignCenter)
+        self.lbl_bpm.setFixedWidth(80)
+        self.lbl_bpm.setStyleSheet(
+            "color:#000000; font-family:Consolas; font-size:22pt; "
+            "font-weight:bold; background:transparent; border:none;"
+        )
+        fv_lay.addWidget(self.lbl_bpm)
+        bpm_lay.addWidget(frame_valor, alignment=Qt.AlignCenter)
+        bpm_lay.addStretch()
+        lay.addWidget(frame_bpm)
+
+        return lay
+
+    # ---------- FRAME INFERIOR ----------
+    def _build_frame_inferior(self):
+        frame_inf = QWidget()
+        frame_inf.setFixedHeight(180)
+        frame_inf.setStyleSheet("background:transparent; border:none;")
+        lay = QHBoxLayout(frame_inf)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(5)
+        lay.addWidget(self._build_frame_controles())
+        lay.addWidget(self._build_frame_consola(), stretch=1)
+        return frame_inf
+
+    # ---------- CONTROLES ----------
+    def _build_frame_controles(self):
+        frame = QFrame()
+        frame.setFixedWidth(280)
+        frame.setStyleSheet(f"background-color: {COLOR_PANEL}; border:1px solid #000000;")
+        lay = QVBoxLayout(frame)
+        lay.setContentsMargins(10, 8, 10, 8)
+        lay.setSpacing(4)
+
+        lay.addWidget(label_seccion("CONTROLES"))
+        separador_h(lay)
+
+        col_btn = QVBoxLayout()
+        col_btn.setSpacing(5)
+
+        self.btn_test = QPushButton("TEST LED")
+        self.btn_test.setStyleSheet(
+            "QPushButton{background:#c0392b;color:white;border:none;padding:5px 10px;font-weight:bold;}"
+            "QPushButton:hover{background:#e74c3c;}"
+        )
+        self.btn_test.clicked.connect(self.toggle_test)
+        col_btn.addWidget(self.btn_test)
+
+        btn_iniciar = QPushButton("INICIAR")
+        btn_iniciar.setStyleSheet(
+            "QPushButton{background:#27ae60;color:white;border:none;padding:5px 8px;font-weight:bold;}"
+            "QPushButton:hover{background:#2ecc71;}"
+        )
+        btn_iniciar.clicked.connect(self.iniciar_conversion)
+        col_btn.addWidget(btn_iniciar)
+
+        btn_terminar = QPushButton("TERMINAR")
+        btn_terminar.setStyleSheet(
+            "QPushButton{background:#c0392b;color:white;border:none;padding:5px 8px;font-weight:bold;}"
+            "QPushButton:hover{background:#e74c3c;}"
+        )
+        btn_terminar.clicked.connect(self.terminar_conversion)
+        col_btn.addWidget(btn_terminar)
+
+        lay.addLayout(col_btn)
+        lay.addStretch()
+        return frame
+
+    # ---------- CONSOLA ----------
+    def _build_frame_consola(self):
+        frame = QFrame()
+        frame.setStyleSheet(f"background-color: {COLOR_PANEL}; border:1px solid #000000;")
+        lay = QVBoxLayout(frame)
+        lay.setContentsMargins(10, 8, 10, 8)
+        lay.setSpacing(4)
+        lay.addWidget(label_seccion("CONSOLA"))
+        separador_h(lay)        
+        self.consola = QTextEdit()
+        self.consola.setReadOnly(True)
+        self.consola.setFont(QFont("Consolas", 9))
+        self.consola.setStyleSheet(
+            "background-color: #1a1a1a; "
+            "color: #00ff99; "
+            "border: none;"
+        )
+        lay.addWidget(self.consola)
+        return frame
+
+    # =========================================================
+    # LÓGICA — PUERTOS
+    # =========================================================
+    def _rellenar_puertos(self):
+        self.combo_puerto.clear()
+        puertos = [p.device for p in serial.tools.list_ports.comports()]
+        if not puertos:
+            puertos = ["Sin puertos"]
+        for p in puertos:
+            self.combo_puerto.addItem(p)
+
+    def actualizar_puertos(self):
+        self._rellenar_puertos()
+        self.log("Puertos actualizados")
+
+    # =========================================================
+    # LÓGICA — CONEXIÓN
+    # =========================================================
+    def _estilo_btn_conectar(self, conectado: bool):
+        if conectado:
+            self.btn_conectar.setText("Desconectar")
+            self.btn_conectar.setStyleSheet(
+                "QPushButton{background:#c0392b;color:white;padding:5px 12px;border:none;font-weight:bold;}"
+                "QPushButton:hover{background:#e74c3c;}"
+            )
+        else:
+            self.btn_conectar.setText("Conectar")
+            self.btn_conectar.setStyleSheet(
+                "QPushButton{background:#27ae60;color:white;padding:5px 12px;border:none;font-weight:bold;}"
+                "QPushButton:hover{background:#2ecc71;}"
+            )
+
+    def toggle_conexion(self):
+        if not self.conectado:
+            try:
+                self.ser = serial.Serial(
+                    port=self.combo_puerto.currentText(),
+                    baudrate=int(self.combo_baudrate.currentText()),
+                    timeout=1
+                )
+                self.conectado = True
+                self._estilo_btn_conectar(True)
+                self.log(
+                    f"Conectado a {self.combo_puerto.currentText()} "
+                    f"a {self.combo_baudrate.currentText()} baudios"
+                )
+                self.iniciar_lectura()
+            except Exception as e:
+                self.log(f"ERROR al conectar: {e}")
+        else:
+            self.conectado = False
+            if self.ser and self.ser.is_open:
+                self.ser.close()
+            self._estilo_btn_conectar(False)
+            self.log("Desconectado")
+
+    def verificar_conexion(self):
+        if not self.conectado:
+            self.log("ERROR: No hay conexión con el PIC")
+            return False
+        return True
+
+    # =========================================================
+    # LÓGICA — CONTROLES
+    # =========================================================
+    def toggle_test(self):
+        if not self.verificar_conexion():
+            return
+        if not self.test_encendido:
+            self.test_encendido = True
+            self.btn_test.setStyleSheet(
+            "QPushButton{background:#27ae60;color:white;border:none;padding:5px 10px;font-weight:bold;}"
+            "QPushButton:hover{background:#2ecc71;}"
+            )
+            self.log("Botón test encendido")
+            if self.ser and self.ser.is_open:
+                self.ser.write(b'A')
+        else:
+            self.test_encendido = False
+            self.btn_test.setStyleSheet(
+            "QPushButton{background:#e74c3c;color:white;border:none;padding:5px 10px;font-weight:bold;}"
+            "QPushButton:hover{background:#c0392b;}"
+            )
+            self.log("Botón test apagado")
+            if self.ser and self.ser.is_open:
+                self.ser.write(b'B')
+
+    def iniciar_conversion(self):
+        if not self.verificar_conexion():
+            return
+        if self.ser and self.ser.is_open:
+            self.ser.write(b'C')
+        self.conversion_activa = True
+        self.lbl_bpm.setText("---")       # <-- resetea display
+        self._bpm_pendiente = None 
+        self.log("Iniciando Conversión...")
+
+    def terminar_conversion(self):
+        if not self.verificar_conexion():
+            return
+        if self.ser and self.ser.is_open:
+            self.ser.write(b'D')
+        self.conversion_activa = False
+        self.lbl_bpm.setText("---")       
+        self._bpm_pendiente = None  
+        self.log("Terminando Conversión...")
+
+    # =========================================================
+    # CONSOLA
+    # =========================================================
+    def log(self, mensaje):
+        self.consola.append(f"> {mensaje}")
+        self.consola.ensureCursorVisible()
+
+    # =========================================================
+    # HILO LECTURA SERIAL
+    # =========================================================
+    def leer_serial(self):
+        while self.conectado:
+            try:
+                if self.ser and self.ser.is_open:
+                    linea = self.ser.readline().decode('ascii', errors='ignore').strip()
+                    if not linea:
+                        continue
+                    if linea.startswith("BPM:"):
+                        try:
+                            self._bpm_pendiente = str(int(linea.split(":")[1]))
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            self.cola_datos.put(int(linea))
+                        except ValueError:
+                            pass
+            except Exception:
+                break
+
+    def iniciar_lectura(self):
+        self._bpm_pendiente = None
+        hilo = threading.Thread(target=self.leer_serial, daemon=True)
+        hilo.start()
+
+    # =========================================================
+    # ACTUALIZAR GRÁFICO
+    # 1 tick del timer (3ms) = 1 muestra consumida de la cola
+    # Igual que el código sintético: 1 tick = 1 punto
+    # =========================================================
+    def actualizar_grafico(self):
+        # BPM
+        if self._bpm_pendiente is not None:
+            self.lbl_bpm.setText(self._bpm_pendiente)
+            self._bpm_pendiente = None
+
+        if self.conectado and self.conversion_activa:
+            try:
+                valor = self.cola_datos.get_nowait()  # 1 solo dato por tick
+                self.datos_adc.append(valor)
+                self.curve.setData(list(self.datos_adc))
+            except queue.Empty:
+                pass  # sin dato este tick, no dibuja ni mete ceros
+        else:
+            self.datos_adc.append(0)
+            self.curve.setData(list(self.datos_adc))
+
+
+# =============================================
+# ARRANCAR
+# =============================================
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    ventana = MainWindow()
+    ventana.show()
+    ventana.log("Consola lista")
+    ventana.log("Esperando conexión...")
+    sys.exit(app.exec())
