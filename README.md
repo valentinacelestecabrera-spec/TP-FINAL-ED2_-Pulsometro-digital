@@ -39,14 +39,9 @@ Como consideraciones de diseño, se utilizó una resistencia de pull-up en el pi
 # Arquitectura de Software (Firmware)
 
 La programación y validación se realizaron mediante simulación en Proteus y en KiCad.
-Diagrama de Flujo: [Diagrama de Flujo / Máquina de Estados](docs/diagrama_software.png)
-
-
-FALTA DIAGRAMA FLUJOS
-
-
-
-
+Diagrama de Flujo:
+<img width="1486" height="1050" alt="WhatsApp Image 2026-06-17 at 19 08 11" src="https://github.com/user-attachments/assets/95ee1148-832c-4ff7-a666-fdea881dcc6d" />
+<img width="546" height="1600" alt="WhatsApp Image 2026-06-17 at 19 08 50" src="https://github.com/user-attachments/assets/decbfd39-52a8-49de-b94b-5ee91af3e0c1" />
 
 # 3. Especificaciones Eléctricas, Alimentación y Entorno
 
