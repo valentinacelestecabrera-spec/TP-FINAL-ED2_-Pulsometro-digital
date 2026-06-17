@@ -56,8 +56,9 @@ Tensión de operación del sistema: 5V
 
 Método de alimentación: Alimentacion por USB
 
-Consumo estimado o medido: En modo activo (máxima carga, relés/motores encendidos): 150 mA
-                           En modo bajo consumo (si aplica): 45 mA
+Consumo estimado o medido: 
+En modo activo (máxima carga, relés/motores encendidos): 150 mA
+En modo bajo consumo: 45 mA
 
 Herramientas de software: MPLAB X IDE v5.35 y compilador XC8
 
