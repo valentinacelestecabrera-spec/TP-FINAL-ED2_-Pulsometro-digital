@@ -1,4 +1,4 @@
-# TP-FINAL-ED2_Pulsometro-digital
+<img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/abc5c79b-ef73-42f2-9505-1e2f753f6e3c" /># TP-FINAL-ED2_Pulsometro-digital
 Asignatura: Electrónica Digital II - Universidad Nacional de Córdoba
 
 
@@ -24,9 +24,11 @@ Alimentación mediante batería.
 
 # 2. Arquitectura del Sistema: Hardware y Software
 aqHardware e Interconexión
-Diagrama de Bloques realizado en KiCad
+Diagrama de Bloques
 
-Esquemático del Circuito: 
+<img width="673" height="342" alt="image" src="https://github.com/user-attachments/assets/11c97fbc-7872-4c7c-9b32-9801bec485cf" />
+
+Esquemático del Circuito realizado en KiCad: 
 
 <img width="1417" height="827" alt="image" src="https://github.com/user-attachments/assets/e5cb7dc0-813c-4cf3-a3ca-f22e26fcb2bf" />
 
@@ -34,10 +36,15 @@ Descripción del Circuito y Consideraciones de Diseño:
 El sistema está basado en un microcontrolador PIC16F887 alimentado a 5 V. La señal proveniente del sensor óptico infrarrojo es adquirida a través del canal analógico AN0 y convertida a formato digital mediante el módulo ADC interno de 10 bits. El firmware procesa continuamente las muestras para detectar los cruces por umbral asociados a cada latido cardíaco y calcular la frecuencia cardíaca en pulsaciones por minuto (BPM).
 Como consideraciones de diseño, se utilizó una resistencia de pull-up en el pin MCLR para garantizar un arranque confiable del microcontrolador y un cristal externo de 4 MHz para proporcionar una referencia de reloj estable. La multiplexación de los displays se implementó mediante interrupciones periódicas del Timer0, permitiendo una visualización continua sin afectar la adquisición de datos del sensor. El procesamiento de la señal incluye un umbral de detección y un período refractario por software para reducir falsas detecciones causadas por ruido o fluctuaciones de la señal óptica.
 
-💻 Arquitectura de Software (Firmware)
+# Arquitectura de Software (Firmware)
 
 La programación y validación se realizaron mediante simulación en Proteus y en KiCad.
-Diagrama de Flujo o Máquina de Estados: [Diagrama de Flujo / Máquina de Estados](docs/diagrama_software.png)
+Diagrama de Flujo: [Diagrama de Flujo / Máquina de Estados](docs/diagrama_software.png)
+
+
+
+
+
 
 # 3. Especificaciones Eléctricas, Alimentación y Entorno
 
@@ -46,10 +53,6 @@ Parámetros de Alimentación y Consumo
 Tensión de operación del sistema: 5V 
 
 Método de alimentación: Alimentacion por USB
-
-Consumo estimado o medido: * En modo activo (máxima carga, relés/motores encendidos):XX mA
-
-En modo bajo consumo (si aplica):XX uA ?????????????????
 
 Herramientas de software: MPLAB X IDE v5.35 y compilador XC8
 
@@ -63,7 +66,7 @@ Temporizador de vigilancia (WDT): Watchdog timer OFF
 
 Borrado maestro (MCLRE): ENCENDIDO
 
-Periféricos Internos Utilizados: [Ej: Timer0, ADC, EUSART, PWM].
+Periféricos Internos Utilizados:Timer0, ADC, EUSART
 
 Gestión de Interrupciones:
 
@@ -93,11 +96,13 @@ Se probo el funcionamiento del sensor para poder configurar el umbral del codigo
 <img width="899" height="869" alt="2" src="https://github.com/user-attachments/assets/b2e7cdbe-91ae-4591-b343-554c3bdf3f11" />
 <img width="899" height="1599" alt="WhatsApp Image 2026-06-17 at 13 22 22" src="https://github.com/user-attachments/assets/6f5ff8f3-179d-4bd5-8d7d-90be8db4ff23" />
 
-Se valido la conexion entre la interfaz realizada y ???
-<img width="1208" height="744" alt="3" src="https://github.com/user-attachments/assets/b6491a22-2c63-409e-b307-af4fee8f83b8" />
+Se valido la conexion entre la interfaz realizada 
+<img width="1193" height="739" alt="image" src="https://github.com/user-attachments/assets/040c5dc4-9d71-4b7b-bcbd-3b918754b71a" />
 
+Foto del Prototipo Real:
+<img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/950138e8-9e4d-4082-b35c-c8205721481d" />
 
-Evidencia Fotográfica y Gráficos: * Capturas de instrumental: [Insertar capturas de Osciloscopio, Analizador Lógico o Terminal Serie]
+En funcionamiento:
 
-Foto del Prototipo Real: [Insertar foto del hardware final cableado/armado en funcionamiento]
+<img width="453" height="372" alt="image" src="https://github.com/user-attachments/assets/dcce2ba2-4311-4702-9c2c-77fb5ed92045" />
 
