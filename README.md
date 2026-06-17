@@ -38,7 +38,7 @@ Como consideraciones de diseño, se utilizó una resistencia de pull-up en el pi
 💻 Arquitectura de Software (Firmware)
 
 La programación y validación se realizaron mediante simulación en Proteus y en KiCad.
-Diagrama de Flujo o Máquina de Estados: [Inserte aquí la imagen del diagrama que explica el lazo principal o el comportamiento del sistema] ![Diagrama de Flujo / Máquina de Estados](docs/diagrama_software.png)
+Diagrama de Flujo o Máquina de Estados: [Diagrama de Flujo / Máquina de Estados](docs/diagrama_software.png)
 
 # 3. Especificaciones Eléctricas, Alimentación y Entorno
 
