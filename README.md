@@ -1,4 +1,4 @@
-<img width="1600" height="900" alt="image" src="https://github.com/user-attachments/assets/abc5c79b-ef73-42f2-9505-1e2f753f6e3c" /># TP-FINAL-ED2_Pulsometro-digital
+# TP-FINAL-ED2_Pulsometro-digital
 Asignatura: Electrónica Digital II - Universidad Nacional de Córdoba
 
 
